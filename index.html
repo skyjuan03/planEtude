@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan d'Étude Interactif L1 → L2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Stone) with Teal Accent -->
+    <!-- Application Structure Plan: A single-page dashboard with tab-based navigation for four distinct study phases. This structure breaks down the 8-week plan into manageable, thematic sections, which is more intuitive than a long scrolling document. A central progress chart provides immediate visual feedback. Each phase displays a weekly grid of interactive cards, allowing users to drill down into daily objectives without overwhelming them with information upfront. This prioritizes clarity and guided exploration. -->
+    <!-- Visualization & Content Choices: Report Info: 8-week schedule. -> Goal: Show overall progress. -> Viz/Method: Donut Chart. -> Interaction: Updates when user hypothetically completes a week. -> Justification: Provides clear, at-a-glance motivation and status. -> Library: Chart.js/Canvas. | Report Info: Daily topics/objectives. -> Goal: Organize and detail daily tasks. -> Viz/Method: Interactive Cards in a Grid. -> Interaction: Click-to-reveal details. -> Justification: Prevents information overload, keeps the main view clean, encourages user engagement. -> Library/Method: HTML/Tailwind + JS. | Report Info: 4 learning phases. -> Goal: Navigate between major sections. -> Viz/Method: Tab Buttons. -> Interaction: Click to switch views. -> Justification: Standard, intuitive navigation for segmented content. -> Library/Method: HTML/Tailwind + JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .phase-button.active {
+            background-color: #14b8a6; /* teal-500 */
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .session-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .objectives {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+        .objectives.open {
+            max-height: 200px;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body class="text-stone-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-teal-700">Programme de Révision Intensif</h1>
+            <p class="text-stone-600 mt-2">Votre parcours interactif pour réussir votre passage en L2 Génie Informatique.</p>
+        </header>
+
+        <section id="progress" class="mb-10 p-6 bg-white rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center mb-4 text-stone-700">Votre Progression Globale</h2>
+             <p class="text-center text-stone-500 mb-6">Ce graphique représente l'avancement de votre programme de 8 semaines. Cochez les cases pour simuler la complétion d'une semaine et voir votre progression.</p>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div id="progress-controls" class="flex flex-wrap justify-center gap-3">
+                </div>
+            </div>
+        </section>
+
+        <main>
+            <div id="navigation" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            </div>
+            
+            <div id="schedule-content" class="bg-white rounded-2xl shadow-lg p-4 md:p-8 min-h-[50vh]">
+                <div id="phase-intro" class="mb-6 border-b border-stone-200 pb-6">
+                    <h3 id="phase-title" class="text-2xl font-bold text-teal-600"></h3>
+                    <p id="phase-description" class="mt-2 text-stone-600"></p>
+                </div>
+                <div id="phase-schedule" class="space-y-8">
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 p-6 bg-white rounded-2xl shadow-lg">
+            <h3 class="text-2xl font-bold mb-4 text-stone-700">Conseils pour Réussir</h3>
+            <ul class="space-y-4 text-stone-600">
+                <li class="flex items-start"><span class="text-teal-500 font-bold mr-3">✓</span><div><strong class="font-semibold text-stone-800">Pratique :</strong> Ne vous contentez pas de lire. Codez tous les jours. Essayez de construire de petits projets personnels.</div></li>
+                <li class="flex items-start"><span class="text-teal-500 font-bold mr-3">✓</span><div><strong class="font-semibold text-stone-800">Régularité :</strong> Il vaut mieux étudier 2 heures tous les jours qu'une journée entière le week-end. La régularité est la clé.</div></li>
+                <li class="flex items-start"><span class="text-teal-500 font-bold mr-3">✓</span><div><strong class="font-semibold text-stone-800">Flexibilité :</strong> Cet emploi du temps est un guide. Si vous êtes plus rapide ou plus lent sur un sujet, n'hésitez pas à l'adapter.</div></li>
+                <li class="flex items-start"><span class="text-teal-500 font-bold mr-3">✓</span><div><strong class="font-semibold text-stone-800">Déblocage :</strong> Si vous ne comprenez pas un concept, cherchez des ressources alternatives (vidéos, tutoriels, forums) ou changez de sujet.</div></li>
+                <li class="flex items-start"><span class="text-teal-500 font-bold mr-3">✓</span><div><strong class="font-semibold text-stone-800">Repos :</strong> Le repos est essentiel pour la mémorisation. Assurez-vous de bien dormir et de faire des pauses.</div></li>
+            </ul>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scheduleData = {
+                1: {
+                    title: "Phase 1 : Les Fondamentaux du Web et de la Programmation",
+                    description: "L'objectif de cette première phase est de construire des bases solides en développement web front-end et en programmation procédurale avec le langage C.",
+                    weeks: [
+                        {
+                            week: 1,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'HTML & CSS', objectives: 'Structurer une page web, sélecteurs CSS.' }, afternoon: { subject: 'Langage C (Bases)', objectives: 'Variables, types, entrées/sorties.' } },
+                                { day: 'Mardi', morning: { subject: 'HTML & CSS', objectives: 'Modèle de boîte (box model), positionnement.' }, afternoon: { subject: 'Langage C (Conditions)', objectives: '`if`, `else`, `switch`.' } },
+                                { day: 'Mercredi', morning: { subject: 'HTML & CSS (Suite)', objectives: 'Pseudo-classes, transitions simples.' }, afternoon: { subject: 'Langage C (Boucles)', objectives: '`for`, `while`, `do-while`.' } },
+                                { day: 'Jeudi', morning: { subject: 'Révision HTML/CSS', objectives: 'Exercices pratiques.' }, afternoon: { subject: 'Révision C', objectives: 'Exercices sur les boucles et conditions.' } },
+                                { day: 'Vendredi', morning: { subject: 'HTML & CSS', objectives: 'Flexbox, Grid.' }, afternoon: { subject: 'Langage C (Fonctions)', objectives: 'Déclaration, appel, portée des variables.' } },
+                                { day: 'Samedi', morning: { subject: 'Révision Fonctions C', objectives: 'Créer de petites fonctions utilitaires.' }, afternoon: { subject: 'Révision Flexbox/Grid', objectives: 'Mettre en page une structure simple.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos', objectives: 'Détente et repos.' }, afternoon: { subject: 'Repos', objectives: 'Détente et repos.' } }
+                            ]
+                        },
+                        {
+                           week: 2,
+                           days: [
+                                { day: 'Lundi', morning: { subject: 'Bootstrap', objectives: 'Introduction, système de grille.' }, afternoon: { subject: 'Langage C (Tableaux)', objectives: 'Manipulation des tableaux à 1 dimension.' } },
+                                { day: 'Mardi', morning: { subject: 'Bootstrap (Composants)', objectives: 'Navbar, Cards, Buttons.' }, afternoon: { subject: 'Langage C (Tableaux 2D)', objectives: 'Matrices, parcours.' } },
+                                { day: 'Mercredi', morning: { subject: 'Bootstrap (Utilitaires)', objectives: 'Spacing, colors, responsive.' }, afternoon: { subject: 'Langage C (Pointeurs)', objectives: 'Introduction, manipulation de base.' } },
+                                { day: 'Jeudi', morning: { subject: 'Projet Web Simple', objectives: 'Démarrer une page de portfolio statique.' }, afternoon: { subject: 'Projet C', objectives: 'Petit programme en console (ex: mini-calculatrice).' } },
+                                { day: 'Vendredi', morning: { subject: 'Projet Web Simple', objectives: 'Finaliser la page de portfolio.' }, afternoon: { subject: 'Projet C', objectives: 'Améliorer le programme avec des fonctions.' } },
+                                { day: 'Samedi', morning: { subject: 'Révision Web', objectives: 'Revoir HTML/CSS/Bootstrap.' }, afternoon: { subject: 'Révision Langage C', objectives: 'Revoir tableaux et pointeurs.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos ou Projet', objectives: 'Avancer sur les projets ou se reposer.' }, afternoon: { subject: 'Repos ou Projet', objectives: 'Avancer sur les projets ou se reposer.' } }
+                           ]
+                        }
+                    ]
+                },
+                2: {
+                    title: "Phase 2 : Dynamisme et Bases de Données",
+                    description: "Maintenant, nous introduisons l'interactivité côté client avec JavaScript et la gestion des données avec SQL.",
+                     weeks: [
+                        {
+                            week: 3,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'JavaScript (Bases)', objectives: 'Variables, types, opérateurs.' }, afternoon: { subject: 'Algèbre Relationnelle', objectives: 'Opérateurs de base: Sélection, projection.' } },
+                                { day: 'Mardi', morning: { subject: 'JavaScript (Conditions & Boucles)', objectives: '`if`, `for`, `while` en JS.' }, afternoon: { subject: 'Algèbre Relationnelle', objectives: 'Jointure, Union, Intersection.' } },
+                                { day: 'Mercredi', morning: { subject: 'JavaScript (Fonctions)', objectives: 'Déclarer et appeler des fonctions.' }, afternoon: { subject: 'SQL (Bases)', objectives: '`CREATE TABLE`, `INSERT INTO`.' } },
+                                { day: 'Jeudi', morning: { subject: 'JavaScript (DOM)', objectives: '`getElementById`, `querySelector`.' }, afternoon: { subject: 'SQL (Requêtes SELECT)', objectives: '`SELECT`, `FROM`, `WHERE`.' } },
+                                { day: 'Vendredi', morning: { subject: 'JavaScript (DOM)', objectives: '`innerHTML`, `textContent`, `style`.' }, afternoon: { subject: 'SQL (Requêtes SELECT)', objectives: '`ORDER BY`, `LIMIT`.' } },
+                                { day: 'Samedi', morning: { subject: 'Révision JS (DOM)', objectives: 'Exercices de manipulation du DOM.' }, afternoon: { subject: 'Révision SQL', objectives: 'Exercices de requêtes simples.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos', objectives: 'Détente et repos.' }, afternoon: { subject: 'Repos', objectives: 'Détente et repos.' } }
+                            ]
+                        },
+                        {
+                            week: 4,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'JavaScript (Événements)', objectives: '`addEventListener` (click, mouseover).' }, afternoon: { subject: 'SQL (Jointures)', objectives: '`INNER JOIN`, `LEFT JOIN`.' } },
+                                { day: 'Mardi', morning: { subject: 'JQuery (Introduction)', objectives: 'Sélecteurs, `$(document).ready()`.' }, afternoon: { subject: 'SQL (Jointures)', objectives: '`RIGHT JOIN`, jointures multiples.' } },
+                                { day: 'Mercredi', morning: { subject: 'JQuery (Manipulation DOM)', objectives: '`.html()`, `.css()`, `.hide()`, `.show()`.' }, afternoon: { subject: 'SQL (Agrégation)', objectives: '`COUNT`, `SUM`, `AVG`.' } },
+                                { day: 'Jeudi', morning: { subject: 'JQuery (Animations)', objectives: '`.animate()`, `.fadeIn()`, `.slideDown()`.' }, afternoon: { subject: 'SQL (Agrégation)', objectives: '`GROUP BY`, `HAVING`.' } },
+                                { day: 'Vendredi', morning: { subject: 'JavaScript (AJAX)', objectives: '`fetch` API pour des requêtes simples.' }, afternoon: { subject: 'SQL (Modification)', objectives: '`UPDATE`, `DELETE`.' } },
+                                { day: 'Samedi', morning: { subject: 'Projet Web Dynamique', objectives: 'Animer la page portfolio avec JS/JQuery.' }, afternoon: { subject: 'Révision SQL', objectives: 'Exercices de requêtes complexes.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos ou Projet', objectives: 'Connecter le front au back (simulé).' }, afternoon: { subject: 'Repos ou Projet', objectives: 'Avancer sur le projet.' } }
+                            ]
+                        }
+                    ]
+                },
+                3: {
+                    title: "Phase 3 : Algorithmique et Systèmes d'Exploitation",
+                    description: "Cette phase se concentre sur la résolution de problèmes avec l'algorithmique et sur la maîtrise de l'environnement serveur.",
+                     weeks: [
+                        {
+                            week: 5,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'Algorithmique (Complexité)', objectives: 'Notations Big O, analyse d\'algorithmes.' }, afternoon: { subject: 'Administration Linux', objectives: 'Commandes de base (`ls`, `cd`, `pwd`, `mkdir`).' } },
+                                { day: 'Mardi', morning: { subject: 'Algorithmique (Tris Simples)', objectives: 'Tri par sélection, tri à bulles.' }, afternoon: { subject: 'Administration Linux', objectives: 'Manipulation de fichiers (`touch`, `cp`, `mv`, `rm`).' } },
+                                { day: 'Mercredi', morning: { subject: 'Algorithmique (Tris Avancés)', objectives: 'Tri par insertion, tri fusion (principe).' }, afternoon: { subject: 'Administration Linux', objectives: 'Permissions de fichiers (`chmod`).' } },
+                                { day: 'Jeudi', morning: { subject: 'Algorithmique (Récursivité)', objectives: 'Concept et exemples simples.' }, afternoon: { subject: 'Administration Linux', objectives: 'Gestion des utilisateurs (`useradd`, `passwd`).' } },
+                                { day: 'Vendredi', morning: { subject: 'Problème d\'Algo', objectives: 'Résoudre des problèmes sur des plateformes.' }, afternoon: { subject: 'Administration Linux', objectives: 'Processus (`ps`, `kill`).' } },
+                                { day: 'Samedi', morning: { subject: 'Révision Algorithmique', objectives: 'Revoir les tris et la complexité.' }, afternoon: { subject: 'Révision Admin Sys', objectives: 'Revoir les commandes de la semaine.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos', objectives: 'Détente et repos.' }, afternoon: { subject: 'Repos', objectives: 'Détente et repos.' } }
+                            ]
+                        },
+                        {
+                            week: 6,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'Algo des Graphes (Bases)', objectives: 'Représentation (matrices, listes d\'adjacence).' }, afternoon: { subject: 'Administration Linux', objectives: 'Services (`systemctl start`, `stop`, `status`).' } },
+                                { day: 'Mardi', morning: { subject: 'Algo des Graphes (Parcours)', objectives: 'Parcours en largeur (BFS).' }, afternoon: { subject: 'Administration Linux', objectives: 'Introduction aux scripts shell.' } },
+                                { day: 'Mercredi', morning: { subject: 'Algo des Graphes (Parcours)', objectives: 'Parcours en profondeur (DFS).' }, afternoon: { subject: 'Administration Linux', objectives: 'Variables et boucles en shell.' } },
+                                { day: 'Jeudi', morning: { subject: 'Algo des Graphes (Application)', objectives: 'Exemple de chemin le plus court (Dijkstra principe).' }, afternoon: { subject: 'Administration Windows', objectives: 'Interface, PowerShell de base.' } },
+                                { day: 'Vendredi', morning: { subject: 'Problème de Graphes', objectives: 'Résoudre un problème de parcours.' }, afternoon: { subject: 'Administration Windows', objectives: 'Commandes de base (équivalents Linux).' } },
+                                { day: 'Samedi', morning: { subject: 'Révision Graphes', objectives: 'Revoir BFS et DFS.' }, afternoon: { subject: 'Révision Scripts', objectives: 'Écrire un script simple.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos ou Challenge', objectives: 'Participer à un challenge de code.' }, afternoon: { subject: 'Repos ou Challenge', objectives: 'Participer à un challenge de code.' } }
+                            ]
+                        }
+                    ]
+                },
+                4: {
+                    title: "Phase 4 : Sujets Avancés et Consolidation",
+                    description: "La dernière phase couvre des sujets complémentaires et permet de consolider toutes les connaissances acquises.",
+                     weeks: [
+                        {
+                            week: 7,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'IHM (Principes)', objectives: 'Principes de conception d\'interfaces.' }, afternoon: { subject: 'XML', objectives: 'Syntaxe, DTD.' } },
+                                { day: 'Mardi', morning: { subject: 'IHM (Maquettage)', objectives: 'Créer des wireframes pour une application.' }, afternoon: { subject: 'XML', objectives: 'Schéma XML (XSD).' } },
+                                { day: 'Mercredi', morning: { subject: 'IHM (Ergonomie)', objectives: 'Les lois de Fitts, Hick.' }, afternoon: { subject: 'XML (Transformation)', objectives: 'XPath.' } },
+                                { day: 'Jeudi', morning: { subject: 'Révision IHM', objectives: 'Analyser une interface existante.' }, afternoon: { subject: 'XML (Transformation)', objectives: 'XSLT.' } },
+                                { day: 'Vendredi', morning: { subject: 'Administration Windows', objectives: 'Gestion des disques, sauvegarde.' }, afternoon: { subject: 'Révision Générale', objectives: 'Revoir Langage C.' } },
+                                { day: 'Samedi', morning: { subject: 'Révision Admin Windows', objectives: 'Exercices pratiques.' }, afternoon: { subject: 'Révision Générale', objectives: 'Revoir SQL.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos', objectives: 'Détente et repos.' }, afternoon: { subject: 'Repos', objectives: 'Détente et repos.' } }
+                            ]
+                        },
+                         {
+                            week: 8,
+                            days: [
+                                { day: 'Lundi', morning: { subject: 'Projet Final (Planification)', objectives: 'Définir les fonctionnalités du projet.' }, afternoon: { subject: 'Projet Final (BDD)', objectives: 'Concevoir le schéma de la base de données.' } },
+                                { day: 'Mardi', morning: { subject: 'Projet Final (Backend)', objectives: 'Mettre en place la logique serveur (simulée).' }, afternoon: { subject: 'Projet Final (Frontend)', objectives: 'Créer la structure HTML/CSS.' } },
+                                { day: 'Mercredi', morning: { subject: 'Projet Final (Intégration)', objectives: 'Connecter le front et le back (simulé).' }, afternoon: { subject: 'Projet Final (Tests)', objectives: 'Tester les fonctionnalités principales.' } },
+                                { day: 'Jeudi', morning: { subject: 'Révision intensive', objectives: 'Identifier et combler les lacunes (Web).' }, afternoon: { subject: 'Révision intensive', objectives: 'Identifier et combler les lacunes (Algo).' } },
+                                { day: 'Vendredi', morning: { subject: 'Révision intensive', objectives: 'Identifier et combler les lacunes (BDD).' }, afternoon: { subject: 'Révision intensive', objectives: 'Identifier et combler les lacunes (Système).' } },
+                                { day: 'Samedi', morning: { subject: 'Présentation Projet', objectives: 'Simuler une démo du projet final.' }, afternoon: { subject: 'Détente', objectives: 'Relaxation avant la rentrée.' } },
+                                { day: 'Dimanche', morning: { subject: 'Repos', objectives: 'Repos bien mérité avant la rentrée !' }, afternoon: { subject: 'Repos', objectives: 'Repos bien mérité avant la rentrée !' } }
+                            ]
+                        }
+                    ]
+                }
+            };
+            
+            let progressChart;
+            const totalWeeks = 8;
+            let completedWeeks = Array(totalWeeks).fill(false);
+
+            const navigationContainer = document.getElementById('navigation');
+            const phaseTitleEl = document.getElementById('phase-title');
+            const phaseDescriptionEl = document.getElementById('phase-description');
+            const phaseScheduleContainer = document.getElementById('phase-schedule');
+            const progressControlsContainer = document.getElementById('progress-controls');
+            
+            function createSessionCard(session, timeOfDay) {
+                const timeIcon = timeOfDay === 'Matin'
+                    ? `<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`
+                    : `<path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`;
+                
+                return `
+                    <div class="session-card bg-stone-50 hover:bg-stone-100 rounded-lg p-4 cursor-pointer border border-stone-200 hover:shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-6 h-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">${timeIcon}</svg>
+                                <div>
+                                    <p class="font-bold text-stone-800">${session.subject}</p>
+                                    <p class="text-xs text-stone-500">${timeOfDay}</p>
+                                </div>
+                            </div>
+                             <svg class="w-5 h-5 text-stone-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        <div class="objectives text-stone-600 pl-9 text-sm">
+                           <p>${session.objectives}</p>
+                        </div>
+                    </div>`;
+            }
+
+            function renderSchedule(phaseKey) {
+                const phaseData = scheduleData[phaseKey];
+                phaseTitleEl.textContent = phaseData.title;
+                phaseDescriptionEl.textContent = phaseData.description;
+                phaseScheduleContainer.innerHTML = '';
+                
+                phaseData.weeks.forEach(weekData => {
+                    const weekContainer = document.createElement('div');
+                    const weekTitle = document.createElement('h4');
+                    weekTitle.className = 'text-xl font-bold text-stone-600 mb-4';
+                    weekTitle.textContent = `Semaine ${weekData.week}`;
+                    weekContainer.appendChild(weekTitle);
+
+                    const weekGrid = document.createElement('div');
+                    weekGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                    
+                    weekData.days.forEach(dayData => {
+                        const dayContainer = document.createElement('div');
+                        dayContainer.className = 'bg-white p-4 rounded-xl border border-stone-100 space-y-4';
+                        
+                        const dayTitle = document.createElement('h5');
+                        dayTitle.className = 'font-bold text-center text-lg text-teal-700';
+                        dayTitle.textContent = dayData.day;
+                        dayContainer.appendChild(dayTitle);
+                        
+                        dayContainer.innerHTML += createSessionCard(dayData.morning, 'Matin');
+                        dayContainer.innerHTML += createSessionCard(dayData.afternoon, 'Après-midi');
+
+                        weekGrid.appendChild(dayContainer);
+                    });
+                    weekContainer.appendChild(weekGrid);
+                    phaseScheduleContainer.appendChild(weekContainer);
+                });
+                
+                document.querySelectorAll('.phase-button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.phase == phaseKey);
+                });
+            }
+            
+            function setupNavigation() {
+                Object.keys(scheduleData).forEach(key => {
+                    const button = document.createElement('button');
+                    button.textContent = `Phase ${key}`;
+                    button.dataset.phase = key;
+                    button.className = 'phase-button px-4 py-2 rounded-lg font-medium text-stone-600 bg-white shadow-sm hover:bg-teal-400 hover:text-white transition-colors duration-200';
+                    button.addEventListener('click', () => renderSchedule(key));
+                    navigationContainer.appendChild(button);
+                });
+            }
+
+            function setupProgressControls() {
+                for (let i = 0; i < totalWeeks; i++) {
+                    const label = document.createElement('label');
+                    label.className = "flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-stone-100";
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = "h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500";
+                    checkbox.dataset.week = i;
+                    checkbox.addEventListener('change', (e) => {
+                        completedWeeks[i] = e.target.checked;
+                        updateChart();
+                    });
+                    
+                    const text = document.createElement('span');
+                    text.textContent = `Sem. ${i + 1}`;
+                    text.className = "text-sm font-medium text-stone-700";
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(text);
+                    progressControlsContainer.appendChild(label);
+                }
+            }
+
+            function updateChart() {
+                const completedCount = completedWeeks.filter(Boolean).length;
+                const remainingCount = totalWeeks - completedCount;
+                progressChart.data.datasets[0].data = [completedCount, remainingCount];
+                progressChart.update();
+            }
+
+
+
+            function initChart() {
+                const ctx = document.getElementById('progressChart').getContext('2d');
+                progressChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Complétées', 'Restantes'],
+                        datasets: [{
+                            data: [0, totalWeeks],
+                            backgroundColor: ['#14b8a6', '#f1f5f9'], // teal-500, coolGray-100
+                            borderColor: ['#ffffff', '#ffffff'],
+                            borderWidth: 4,
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw} semaines`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            phaseScheduleContainer.addEventListener('click', (e) => {
+                const card = e.target.closest('.session-card');
+                if (card) {
+                    const objectives = card.querySelector('.objectives');
+                    const icon = card.querySelector('svg:last-of-type');
+                    objectives.classList.toggle('open');
+                    icon.classList.toggle('rotate-180');
+                }
+            });
+
+            setupNavigation();
+            initChart();
+            setupProgressControls();
+            renderSchedule(1);
+        });
+    </script>
+</body>
+</html>
